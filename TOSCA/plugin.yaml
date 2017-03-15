@@ -14,22 +14,131 @@
 # under the License.
 #
 
-tosca_definitions_version: tosca_simple_profile_1_0
+tosca_definitions_version: tosca_simple_profile_for_nfv_1_0
+
+
+imports:
+  - policies.yaml
+
+
+data_types:
+
+  aria.openstack.datatypes.AgentConfig:
+    description: >-
+      Cloudify agent configuration schema.
+    properties:
+      install_method:
+        description: >-
+          Specifies how (and if) the cloudify agent should be installed.
+          Valid values are:
+          * none - No agent will be installed on the host.
+          * remote - An agent will be installed using SSH on linux hosts and WinRM on windows hosts.
+          * init_script - An agent will be installed via a script that will run on the host when it gets created.
+                          This method is only supported for specific IaaS plugins.
+          * provided - An agent is assumed to already be installed on the host image.
+                       That agent will be configured and started via a script that will run on the host when it gets created.
+                       This method is only supported for specific IaaS plugins.
+        type: string
+        default: none
+      user:
+        description: >-
+          For host agents, the agent will be installed for this user.
+        type: string
+        required: false
+      key:
+        description: >-
+          For host agents that are installed via SSH, this is the path to the private
+          key that will be used to connect to the host.
+          In most cases, this value will be derived automatically during bootstrap.
+        type: string
+        required: false
+      password:
+        description: >-
+          For host agents that are installed via SSH (on linux) and WinRM (on windows)
+          this property can be used to connect to the host.
+          For linux hosts, this property is optional in case the key property is properly configured
+          (either explicitly or implicitly during bootstrap).
+          For windows hosts that are installed via WinRM, this property is also optional
+          and depends on whether the password runtime property has been set by the relevant IaaS plugin,
+          prior to the agent installation.
+        type: string
+        required: false
+      port:
+        description: >-
+          For host agents that are installed via SSH (on linux) and WinRM (on windows),
+          this is the port used to connect to the host.
+          The default values are 22 for linux hosts and 5985 for windows hosts.
+        type: integer
+        required: false
+      process_management:
+        description: >-
+          Process management specific configuration. (type: dictionary)
+        required: false
+        type: map
+        entry_schema: string
+
+      min_workers:
+        description: >-
+          Minimum number of agent workers. By default, the value will be 0.
+          Note: For windows based agents, this property is ignored and min_workers is set to the value of max_workers.
+        type: integer
+        required: false
+      max_workers:
+        description: >-
+          Maximum number of agent workers. By default, the value will be 5.
+        type: integer
+        required: false
+      disable_requiretty:
+        description: >-
+          For linux based agents, disables the requiretty setting in the sudoers file. By default, this value will be true.
+        type: boolean
+        required: false
+      env:
+        description: >-
+          Optional environment variables that the agent will be started with. (type: dictionary)
+        required: false
+        type: map
+        entry_schema: string
+      extra:
+        description: >-
+          Optional additional low level configuration details. (type: dictionary)
+        required: false
+        type: map
+        entry_schema: string
 
 
 interface_types:
-  Validation:
+
+  aria.openstack.interfaces.validation:
     derived_from: tosca.interfaces.Root
     creation: {}
+    deletion: {}
 
 
 node_types:
 
-  cloudify.openstack.nodes.Server:
-    derived_from: Compute
+  aria.openstack.nodes.Server:
+    derived_from: tosca.nodes.Compute
     properties:
+      ip:
+        default:
+        type: string
+      os_family:
+        description: >-
+          Property specifying what type of operating system family
+          this compute node will run.
+        default: linux
+        type: string
+      agent_config:
+        type: aria.openstack.datatypes.AgentConfig
+        default:
+          install_method: remote
+          port: 22
+
       server:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           key-value server configuration as described in OpenStack compute create server API.
           (DEPRECATED - Use the args input in create operation instead)
@@ -41,15 +150,18 @@ node_types:
           See the using existing resources section.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
       resource_id:
         default: ''
+        type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
       image:
         default: ''
+        type: string
         description: >-
           The image for the server.
           May receive either the ID or the name of the image.
@@ -58,6 +170,7 @@ node_types:
           (Default: '').
       flavor:
         default: ''
+        type: string
         description: >-
           The flavor for the server.
           May receive either the ID or the name of the flavor.
@@ -66,6 +179,7 @@ node_types:
           (Default: '').
       management_network_name:
         default: ''
+        type: string
         description: >-
           Cloudify's management network name.
           Every server should be connected to the management network.
@@ -77,6 +191,7 @@ node_types:
           don't set this property. Defaults to '' (empty string).
       use_password:
         default: false
+        type: boolean
         description: >-
           A boolean describing whether this server image supports user-password authentication.
           Images that do should post the administrator user's password to the Openstack metadata service (e.g. via cloudbase);
@@ -84,47 +199,65 @@ node_types:
           decrypted using the server's keypair and then saved in the server's runtime properties.
       openstack_config:
           default: {}
+          type: map
+          entry_schema: string
           description: >-
             see Openstack Configuraion
     requirements:
       - floating_ip:
-          capability: tosca.capabilities.network.Linkable
-          node: cloudify.openstack.nodes.FloatingIP
-          relationship: tosca.relationships.DependsOn
+          capability: tosca.capabilities.Node
+          node: aria.openstack.nodes.FloatingIP
+          relationship: aria.openstack.server_connected_to_floating_ip
+      - security_group:
+          capability: tosca.capabilities.Node
+          node: aria.openstack.nodes.SecurityGroup
+          relationship: aria.openstack.server_connected_to_security_group
+      - port:
+          capability: tosca.capabilities.Node
+          node: aria.openstack.nodes.Port
+          relationship: aria.openstack.server_connected_to_port
+      - key_pair:
+          capability: tosca.capabilities.Node
+          node: aria.openstack.nodes.KeyPair
+          relationship: aria.openstack.server_connected_to_keypair
+    capabilities:
+      volume:
+        type: Node
 
-
-
-  cloudify.openstack.nodes.WindowsServer:
+  aria.openstack.nodes.WindowsServer:
     derived_from: aria.openstack.nodes.Server
     properties:
       use_password:
         default: true
+        type: boolean
         description: >-
           Default changed for derived type
           because Windows instances need a password for agent installation
       os_family:
         default: windows
+        type: string
         description: >-
           (updates the os_family default as a convenience)
       agent_config:
-        type: 'cloudify.datatypes.AgentConfig'                                                      # TODO...
+        type: aria.openstack.datatypes.AgentConfig
         default:
           port: 5985
         description: >-
           (updates the defaults for the agent_config for Windows)
 
-  cloudify.openstack.nodes.KeyPair:
-    derived_from: Root
+  aria.openstack.nodes.KeyPair:
+    derived_from: tosca.nodes.Root
     properties:
       keypair:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           the keypair object as described by Openstack. This
           parameter can be used to override and pass parameters
           directly to Nova client.
           Note that in the case of keypair, the only nested parameter
-          that can be used is "name".
-      private_key_path:
+          that can be used is "name".private_key_path:
         description: >-
           the path (on the machine the plugin is running on) to
           where the private key should be stored. If
@@ -139,11 +272,13 @@ node_types:
           and should be used as-is.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
       resource_id:
         default: ''
+        type: string
         description: >-
           the name that will be given to the resource on Openstack (excluding optional prefix).
           If not provided, a default name will be given instead.
@@ -152,36 +287,54 @@ node_types:
           as either the name or id of an existing keypair to be used.
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create:
           implementation: openstack.nova_plugin.keypair.create
           inputs:
             args:
               default: {}
+              type: map
+              entry_schema: string
+
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
         delete:
           implementation: openstack.nova_plugin.keypair.delete
           inputs:
             openstack_config:
               default: {}
-      Validation:
+              type: map
+              entry_schema: string
+
+      aria.openstack.interfaces.validation:
         creation:
           implementation: openstack.nova_plugin.keypair.creation_validation
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
 
-  cloudify.openstack.nodes.Subnet:
-    derived_from: Root
+    capabilities:
+      server:
+        type: tosca.capabilities.Node
+
+  aria.openstack.nodes.Subnet:
+    derived_from: tosca.nodes.Root
     properties:
       subnet:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           key-value subnet configuration as described at http://developer.openstack.org/api-ref-networking-v2.html#subnets. (**DEPRECATED - Use the `args` input in create operation instead**)
       use_external_resource:
@@ -192,62 +345,71 @@ node_types:
           See the using existing resources section.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
       resource_id:
         default: ''
+        type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create:
           implementation: openstack.neutron_plugin.subnet.create
           inputs:
             args:
               default: {}
+              type: map
+              entry_schema: string
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
         delete:
           implementation: openstack.neutron_plugin.subnet.delete
           inputs:
             openstack_config:
               default: {}
-      Validation:
+              type: map
+              entry_schema: string
+      aria.openstack.interfaces.validation:
         creation:
           implementation: openstack.neutron_plugin.subnet.creation_validation
           inputs:
             args:
               default: {}
+              type: map
+              entry_schema: string
             openstack_config:
               default: {}
-      add_target:
-        implementation: openstack.neutron_plugin.router.connect_subnet
-        inputs:
-          openstack_config:
-            default: {}
-      remove_target:
-        implementation: openstack.neutron_plugin.router.disconnect_subnet
-        inputs:
-          openstack_config:
-            default: {}
+              type: map
+              entry_schema: string
     requirements:
       - router:
-          capability: tosca.capabilities.network.Linkable
-          node: cloudify.openstack.nodes.Router
-          relationship: tosca.relationships.network.LinksTo
+          capability: tosca.capabilities.Node
+          node: aria.openstack.nodes.Router
+          relationship: aria.openstack.subnet_connected_to_router
+    capabilities:
+      port:
+        type: Node
 
-  cloudify.openstack.nodes.SecurityGroup:
-    derived_from: Root
+  aria.openstack.nodes.SecurityGroup:
+    derived_from: tosca.nodes.Root
     properties:
       security_group:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           key-value security_group configuration as described in http://developer.openstack.org/api-ref-networking-v2-ext.html#createSecGroup. (**DEPRECATED - Use the `args` input in create operation instead**)
       description:
@@ -257,6 +419,7 @@ node_types:
           SecurityGroup description.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
@@ -268,61 +431,78 @@ node_types:
           See the using existing resources section.
       resource_id:
         default: ''
+        type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
       rules:
         default: []
+        type: list
+        entry_schema: string
         description: >-
           key-value security_group_rule configuration as described in http://developer.openstack.org/api-ref-networking-v2.html#security_groups
       disable_default_egress_rules:
         default: false
+        type: boolean
         description: >-
           a flag for removing the default rules which https://wiki.openstack.org/wiki/Neutron/SecurityGroups#Behavior. If not set to `true`, these rules will remain, and exist alongside any additional rules passed using the `rules` property.
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create:
           implementation: openstack.neutron_plugin.security_group.create
           inputs:
             args:
               default: {}
+              type: map
+              entry_schema: string
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
         delete:
           implementation: openstack.neutron_plugin.security_group.delete
           inputs:
             openstack_config:
               default: {}
-      Validation:
+              type: map
+              entry_schema: string
+      aria.openstack.interfaces.validation:
         creation:
           implementation: openstack.neutron_plugin.security_group.creation_validation
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
     capabilities:
-      linkable:
-        type: tosca.capabilities.network.Linkable
-        valid_source_types: [cloudify.openstack.nodes.Port]
+      port:
+        type: tosca.capabilities.Node
 
-  cloudify.openstack.nodes.Router:
-    derived_from: cloudify.nodes.Root
+  aria.openstack.nodes.Router:
+    derived_from: tosca.nodes.Root
     properties:
       router:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           key-value router configuration as described in http://developer.openstack.org/api-ref-networking-v2.html#layer3. (**DEPRECATED - Use the `args` input in create operation instead**)
       external_network:
         default: ''
+        type: string
         description: >-
           An external network name or ID.
           If given, the router will use this external network as a gateway.
       default_to_managers_external_network:
         default: true
+        type: boolean
         description: >-
           A boolean which determines whether to use the Cloudify Manager's external network if no other external network was given (whether by a relationship, by the `external_network` property or by the nested `external_gateway_info` key in the `router` property). This is only relevant if the manager's external network appears in the Provider-context. Defaults to `true`.
       use_external_resource:
@@ -333,6 +513,7 @@ node_types:
           See the using existing resources section.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
@@ -340,46 +521,59 @@ node_types:
         default: ''
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
+        type: string
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create:
           implementation: openstack.neutron_plugin.router.create
           inputs:
             args:
               default: {}
+              type: map
+              entry_schema: string
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
         delete:
           implementation: openstack.neutron_plugin.router.delete
           inputs:
             openstack_config:
               default: {}
-      Validation:
+              type: map
+              entry_schema: string
+      aria.openstack.interfaces.validation:
         creation:
           implementation: openstack.neutron_plugin.router.creation_validation
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
     capabilities:
-      linkable:
-        type: tosca.capabilities.network.Linkable
-        valid_source_types: [cloudify.openstack.nodes.Subnet]
+      subnet:
+        type: tosca.capabilities.Node
 
-  cloudify.openstack.nodes.Port:
-    derived_from: Root
+  aria.openstack.nodes.Port:
+    derived_from: tosca.nodes.Root
     properties:
       port:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           key-value port configuration as described in http://developer.openstack.org/api-ref-networking-v2.html#ports. (**DEPRECATED - Use the `args` input in create operation instead**)
       fixed_ip:
         default: ''
+        type: string
         description: >-
           may be used to request a specific fixed IP for the port.
           If the IP is unavailable
@@ -393,59 +587,84 @@ node_types:
           See the using existing resources section.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
       resource_id:
         default: ''
+        type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create:
           implementation: openstack.neutron_plugin.port.create
           inputs:
             args:
               default: {}
+              type: map
+              entry_schema: string
+
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
         delete:
           implementation: openstack.neutron_plugin.port.delete
           inputs:
             openstack_config:
               default: {}
-      Configure:
+              type: map
+              entry_schema: string
+      tosca.interfaces.relationship.Configure:
         add_target:
           implementation: openstack.neutron_plugin.port.connect_security_group
           inputs:
             openstack_config:
-              default: {}      Validation:
+              default: {}
+              type: map
+              entry_schema: string
+      aria.openstack.interfaces.validation:
         creation:
           implementation: openstack.neutron_plugin.port.creation_validation
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
     requirements:
       - security_group:
-          capability: tosca.capabilities.network.Linkable
-          node: cloudify.openstack.nodes.SecurityGroup
-          relationship: tosca.relationships.network.LinksTo
+          capability: tosca.capabilities.Node
+          node: aria.openstack.nodes.SecurityGroup
+          relationship: aria.openstack.port_connected_to_security_group
       - floating_ip:
-          capability: tosca.capabilites.network.Linkable
-          node: cloudify.openstack.nodes.FloaingIP
-          relationship: tosca.relationships.network.LinksTo
+          capability: tosca.capabilities.Node
+          node: aria.openstack.nodes.FloatingIP
+          relationship: aria.openstack.port_connected_to_floating_ip
+      - subnet:
+          capability: tosca.capabilities.Node
+          node: aria.openstack.nodes.Subnet
+          relationship: aria.openstack.port_connected_to_subnet
+    capabilities:
+      server:
+        type: tosca.capabilities.Node
 
-  cloudify.openstack.nodes.Network:
-    derived_from: tosca.nodes.network.Network
+  aria.openstack.nodes.Network:
+    derived_from: tosca.nodes.Root
     properties:
       network:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           key-value network configuration as described in http://developer.openstack.org/api-ref-networking-v2.html#networks. (**DEPRECATED - Use the `args` input in create operation instead**)
       use_external_resource:
@@ -456,45 +675,59 @@ node_types:
           See the using existing resources section.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
       resource_id:
         default: ''
+        type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create:
           implementation: openstack.neutron_plugin.network.create
           inputs:
             args:
               default: {}
+              type: map
+              entry_schema: string
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
         delete:
           implementation: openstack.neutron_plugin.network.delete
           inputs:
             openstack_config:
               default: {}
-      Validation:
+              type: map
+              entry_schema: string
+      aria.openstack.interfaces.validation:
         creation:
           implementation: openstack.neutron_plugin.network.creation_validation
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
 
-  cloudify.openstack.nodes.FloatingIP:
-    derived_from: Root
+  aria.openstack.nodes.FloatingIP:
+    derived_from: tosca.nodes.Root
     properties:
       floatingip:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           key-value floatingip configuration as described in http://developer.openstack.org/api-ref-networking-v2.html#layer3. (**DEPRECATED - Use the `args` input in create operation instead**)
       use_external_resource:
@@ -505,68 +738,64 @@ node_types:
           See the using existing resources section.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
       resource_id:
         description: IP address of the floating IP
         default: ''
+        type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create:
           implementation: openstack.neutron_plugin.floatingip.create
           inputs:
             args:
               default: {}
+              type: map
+              entry_schema: string
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
         delete:
           implementation: openstack.neutron_plugin.floatingip.delete
           inputs:
             openstack_config:
               default: {}
-      Validation:
+              type: map
+              entry_schema: string
+      aria.openstack.interfaces.validation:
         creation:
           implementation: openstack.neutron_plugin.floatingip.creation_validation
           inputs:
             openstack_config:
               default: {}
-      Configure:
-        add_source:
-          implementation: openstack.nova_plugin.server.connect_floatingip
-          inputs:
-            fixed_ip:
-              description: >-
-                The fixed IP to be associated with the floating IP.
-                If omitted, Openstack will choose which port to associate.
-              type: string
-              default: ''
-            openstack_config:
-              default: {}
-        remove_source:
-          implementation: openstack.nova_plugin.server.disconnect_floatingip
-          inputs:
-            openstack_config:
-              default: {}
+              type: map
+              entry_schema: string
+
     capabilities:
-      linkable:
-        type: tosca.capabilities.network.Linkable
-        valid_source_types: [cloudify.openstack.nodes.Server]
+      server:
+        type: tosca.capabilities.Node
 
-
-  cloudify.openstack.nodes.Volume:
-    derived_from: Root
+  aria.openstack.nodes.Volume:
+    derived_from: tosca.nodes.Root
     properties:
       volume:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           key-value volume configuration as described in http://developer.openstack.org/api-ref-blockstorage-v1.html#volumes-v1. (**DEPRECATED - Use the `args` input in create operation instead**)
       use_external_resource:
@@ -577,15 +806,18 @@ node_types:
           See the using existing resources section.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
       resource_id:
-        default: ''
+        default:
+        type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
       device_name:
         default: auto
+        type: string
         description: >-
           The device name this volume will be attached to.
           Default value is *auto*,
@@ -596,6 +828,8 @@ node_types:
           this is why we recommend using *auto*.
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
@@ -607,14 +841,18 @@ node_types:
           If a Server instance is connected to this Volume by a relationship,
           this volume will be used as the boot volume for that Server.
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create:
           implementation: openstack.cinder_plugin.volume.create
           inputs:
             args:
               default: {}
+              type: map
+              entry_schema: string
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
             status_attempts:
               description: >-
                 Number of times to check for the creation's status before failing
@@ -631,18 +869,29 @@ node_types:
           inputs:
             openstack_config:
               default: {}
-      Validation:
+              type: map
+              entry_schema: string
+      aria.openstack.interfaces.validation:
         creation:
           implementation: openstack.cinder_plugin.volume.creation_validation
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
+    requirements:
+      - server:
+          capability: tosca.capabilities.Node
+          node: aria.openstack.nodes.Server
+          relationship: aria.openstack.volume_attached_to_server
 
-  cloudify.openstack.nova_net.nodes.FloatingIP:
-    derived_from: Root
+  aria.openstack.nova_net.nodes.FloatingIP:
+    derived_from: tosca.nodes.Root
     properties:
       floatingip:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           key-value floatingip configuration as described in http://developer.openstack.org/api-ref-compute-v2-ext.html#ext-os-floating-ips. (**DEPRECATED - Use the `args` input in create operation instead**)
       use_external_resource:
@@ -653,44 +902,61 @@ node_types:
           See the using existing resources section.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           TODO: CREATE. THIS IS MISSING
       resource_id:
         default: ''
+        type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create:
           implementation: openstack.nova_plugin.floatingip.create
           inputs:
             args:
               default: {}
+              type: map
+              entry_schema: string
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
         delete:
           implementation: openstack.nova_plugin.floatingip.delete
           inputs:
             openstack_config:
               default: {}
-      Validation:
+              type: map
+              entry_schema: string
+      aria.openstack.interfaces.validation:
         creation:
           implementation: openstack.nova_plugin.floatingip.creation_validation
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
+    capabilities:
+      port:
+        type: tosca.capabilities.Node
 
-  cloudify.openstack.nova_net.nodes.SecurityGroup:
-    derived_from: Root
+  aria.openstack.nova_net.nodes.SecurityGroup:
+    derived_from: tosca.nodes.Root
     properties:
       security_group:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           key-value security_group configuration as described in http://developer.openstack.org/api-ref-compute-v2-ext.html#ext-os-security-groups. (**DEPRECATED - Use the `args` input in create operation instead**)
       use_external_resource:
@@ -701,47 +967,66 @@ node_types:
           See the using existing resources section.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           TODO: CREATE. THIS IS MISSING
       resource_id:
         default: ''
+        type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
       rules:
         default: []
+        type: list
+        entry_schema: string
         description: >-
           key-value security group rule as described in http://developer.openstack.org/api-ref-compute-v2-ext.html#ext-os-security-group-default-rules.
       description:
         description: security group description
+        type: string
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create:
           implementation: openstack.nova_plugin.security_group.create
           inputs:
             args:
               default: {}
+              type: map
+              entry_schema: string
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
         delete:
           implementation: openstack.nova_plugin.security_group.delete
           inputs:
             openstack_config:
               default: {}
-      Validation:
+              type: map
+              entry_schema: string
+
+      aria.openstack.interfaces.validation:
         creation:
           implementation: openstack.nova_plugin.security_group.creation_validation
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
+    capabilities:
+      server:
+        type: tosca.capabilities.Node
 
-  cloudify.openstack.nodes.Image:
-    derived_from: Root
+  aria.openstack.nodes.Image:
+    derived_from: tosca.nodes.Root
     properties:
       image:
         description: >-
@@ -751,70 +1036,92 @@ node_types:
           To create an image from the local file its path should be added
           in data parameter.
         default: {}
+        type: map
+        entry_schema: string
       image_url:
         default: ''
+        type: string
         description: >-
           The openstack resource URL for the image.
       use_external_resource:
         default: false
+        type: boolean
         description: >-
           a boolean for setting whether to create the resource or use an existing one.
           See the using existing resources section.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
       resource_id:
         default: ''
+        type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create:
           implementation: openstack.glance_plugin.image.create
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
         start:
           implementation: openstack.glance_plugin.image.start
           inputs:
             start_retry_interval:
               default: 30
+              type: integer
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
         delete:
           implementation: openstack.glance_plugin.image.delete
           inputs:
             openstack_config:
               default: {}
-      Validation:
+              type: map
+              entry_schema: string
+      aria.openstack.interfaces.validation:
         creation:
           implementation: openstack.glance_plugin.image.creation_validation
           inputs:
             openstack_config:
               default: {}
-
-  cloudify.openstack.nodes.Project:
-    derived_from: Root
+              type: map
+              entry_schema: string
+  aria.openstack.nodes.Project:
+    derived_from: tosca.nodes.Root
     properties:
       project:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           key-value project configuration.
       users:
         default: []
+        type: list
+        entry_schema: string
         description: >-
           List of users assigned to this project in the following format:
             { name: string, roles: [string] }
       quota:
         default: {}
+        type: map
+        entry_schema: string
         description: |
           A dictionary mapping service names to quota definitions for a proejct
 
@@ -825,114 +1132,208 @@ node_types:
               nova: <quota>
       use_external_resource:
         default: false
+        type: boolean
         description: >-
           a boolean for setting whether to create the resource or use an existing one.
           See the using existing resources section.
       create_if_missing:
         default: false
+        type: boolean
         description: >-
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
       resource_id:
         default: ''
+        type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
       openstack_config:
         default: {}
+        type: map
+        entry_schema: string
         description: >-
           endpoints and authentication configuration for Openstack.
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      Standard:
+      tosca.interfaces.node.lifecycle.Standard:
         create: openstack.keystone_plugin.project.create
         start: openstack.keystone_plugin.project.start
         delete: openstack.keystone_plugin.project.delete
-      Validation:
+      aria.openstack.interfaces.validation:
         creation: openstack.keystone_plugin.project.creation_validation
 
 
-###############################################################
+relationship_types:
 
-  cloudify.openstack.port_connected_to_floating_ip:
-    derived_from: cloudify.relationships.connected_to
-    source_interfaces:
-      cloudify.interfaces.relationship_lifecycle:
-        establish:
+  aria.openstack.port_connected_to_security_group:
+    derived_from: ConnectsTo
+    interfaces:
+      tosca.interfaces.relationship.Configure:
+        type: tosca.interfaces.relationship.Configure
+        add_source:
+          implementation: openstack.neutron_plugin.port.connect_security_group
+          inputs:
+            openstack_config:
+              default: {}
+              type: map
+              entry_schema: string
+
+  aria.openstack.subnet_connected_to_router:
+    derived_from: ConnectsTo
+    interfaces:
+      tosca.interfaces.relationship.Configure:
+        add_target:
+          implementation: openstack.neutron_plugin.router.connect_subnet
+          inputs:
+            openstack_config:
+              default: {}
+              type: map
+              entry_schema: string
+        remove_target:
+          implementation: openstack.neutron_plugin.router.disconnect_subnet
+          inputs:
+            openstack_config:
+              default: {}
+              type: map
+              entry_schema: string
+
+  aria.openstack.server_connected_to_floating_ip:
+    derived_from: ConnectsTo
+    interfaces:
+      tosca.interfaces.relationship.Configure:
+        add_source:
+          implementation: openstack.nova_plugin.server.connect_floatingip
+          inputs:
+            fixed_ip:
+              description: >
+                The fixed IP to be associated with the floating IP.
+                If omitted, Openstack will choose which port to associate.
+              type: string
+              default: ''
+            openstack_config:
+              default: {}
+              type: map
+              entry_schema: string
+
+        remove_source:
+          implementation: openstack.nova_plugin.server.disconnect_floatingip
+          inputs:
+            openstack_config:
+              default: {}
+              type: map
+              entry_schema: string
+
+  aria.openstack.port_connected_to_floating_ip:
+    derived_from: ConnectsTo
+    interfaces:
+      tosca.interfaces.relationship.Configure:
+        source_add:
           implementation: openstack.neutron_plugin.floatingip.connect_port
           inputs:
             openstack_config:
               default: {}
-        unlink:
+              type: map
+              entry_schema: string
+        remove_source:
           implementation: openstack.neutron_plugin.floatingip.disconnect_port
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
 
-  cloudify.openstack.server_connected_to_security_group:
-    derived_from: cloudify.relationships.connected_to
-    source_interfaces:
-      cloudify.interfaces.relationship_lifecycle:
-        establish:
+  aria.openstack.server_connected_to_security_group:
+    derived_from: ConnectsTo
+    interfaces:
+      tosca.interfaces.relationship.Configure:
+        add_source:
           implementation: openstack.nova_plugin.server.connect_security_group
           inputs:
             openstack_config:
               default: {}
-        unlink:
+              type: map
+              entry_schema: string
+
+        remove_source:
           implementation: openstack.nova_plugin.server.disconnect_security_group
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
 
-  cloudify.openstack.server_connected_to_port:
-    derived_from: cloudify.relationships.connected_to
-    source_interfaces:
-      cloudify.interfaces.relationship_lifecycle:
-        unlink:
+
+  aria.openstack.server_connected_to_port:
+    derived_from: ConnectsTo
+    interfaces:
+      tosca.interfaces.relationship.Configure:
+        remove_source:
           implementation: openstack.neutron_plugin.port.detach
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
 
-  cloudify.openstack.server_connected_to_keypair:
-    derived_from: cloudify.relationships.connected_to
 
-  cloudify.openstack.port_connected_to_subnet:
-    derived_from: cloudify.relationships.connected_to
+  aria.openstack.server_connected_to_keypair:
+    derived_from: ConnectsTo
 
-  cloudify.openstack.volume_attached_to_server:
-    derived_from: cloudify.relationships.connected_to
-    target_interfaces:
-      cloudify.interfaces.relationship_lifecycle:
-        establish:
+  aria.openstack.port_connected_to_subnet:
+    derived_from: ConnectsTo
+
+  aria.openstack.volume_attached_to_server:
+    derived_from: ConnectsTo
+    interfaces:
+      tosca.interfaces.relationship.Configure:
+        add_target:
           implementation: openstack.nova_plugin.server.attach_volume
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
+
             status_attempts:
-              description: >-
+              description: >
                 Number of times to check for the attachment's status before failing
               type: integer
               default: 10
             status_timeout:
-              description: >-
+              description: >
                 Interval (in seconds) between subsequent inquiries of the attachment's
                 status
               type: integer
               default: 2
-        unlink:
+        remove_target:
           implementation: openstack.nova_plugin.server.detach_volume
           inputs:
             openstack_config:
               default: {}
+              type: map
+              entry_schema: string
+
             status_attempts:
-              description: >-
+              description: >
                 Number of times to check for the detachment's status before failing
               type: integer
               default: 10
             status_timeout:
-              description: >-
+              description: >
                 Interval (in seconds) between subsequent inquiries of the detachment's
                 status
               type: integer
               default: 2
+
+
+policy_types:
+  openstack:
+    derived_from: aria.Plugin
+    properties:
+      executor:
+        default: central_deployment_agent
+        type: string
+      install:
+        default: false
+        type: boolean
