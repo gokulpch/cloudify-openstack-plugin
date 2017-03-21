@@ -17,10 +17,6 @@
 tosca_definitions_version: tosca_simple_profile_for_nfv_1_0
 
 
-imports:
-  - policies.yaml
-
-
 data_types:
 
   aria.openstack.datatypes.AgentConfig:
@@ -294,7 +290,7 @@ node_types:
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create:
           implementation: openstack > nova_plugin.keypair.create
           inputs:
@@ -314,8 +310,9 @@ node_types:
               default: {}
               type: map
               entry_schema: string
-
-      aria.openstack.interfaces.validation:
+      
+      Validation:
+        type: aria.openstack.interfaces.validation
         creation:
           implementation: openstack > nova_plugin.keypair.creation_validation
           inputs:
@@ -363,7 +360,7 @@ node_types:
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create:
           implementation: openstack > neutron_plugin.subnet.create
           inputs:
@@ -382,7 +379,8 @@ node_types:
               default: {}
               type: map
               entry_schema: string
-      aria.openstack.interfaces.validation:
+      Validation:
+        type: aria.openstack.interfaces.validation
         creation:
           implementation: openstack > neutron_plugin.subnet.creation_validation
           inputs:
@@ -454,7 +452,7 @@ node_types:
         description: >-
           a flag for removing the default rules which https://wiki.openstack.org/wiki/Neutron/SecurityGroups#Behavior. If not set to `true`, these rules will remain, and exist alongside any additional rules passed using the `rules` property.
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create:
           implementation: openstack > neutron_plugin.security_group.create
           inputs:
@@ -473,7 +471,8 @@ node_types:
               default: {}
               type: map
               entry_schema: string
-      aria.openstack.interfaces.validation:
+      Validation:
+        type: aria.openstack.interfaces.validation
         creation:
           implementation: openstack > neutron_plugin.security_group.creation_validation
           inputs:
@@ -531,7 +530,7 @@ node_types:
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create:
           implementation: openstack > neutron_plugin.router.create
           inputs:
@@ -550,7 +549,8 @@ node_types:
               default: {}
               type: map
               entry_schema: string
-      aria.openstack.interfaces.validation:
+      Validation:
+        type: aria.openstack.interfaces.validation
         creation:
           implementation: openstack > neutron_plugin.router.creation_validation
           inputs:
@@ -605,7 +605,7 @@ node_types:
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create:
           implementation: openstack > neutron_plugin.port.create
           inputs:
@@ -625,7 +625,7 @@ node_types:
               default: {}
               type: map
               entry_schema: string
-      tosca.interfaces.relationship.Configure:
+      Configure:
         add_target:
           implementation: openstack > neutron_plugin.port.connect_security_group
           inputs:
@@ -633,7 +633,8 @@ node_types:
               default: {}
               type: map
               entry_schema: string
-      aria.openstack.interfaces.validation:
+      Validation:
+        type: aria.openstack.interfaces.validation
         creation:
           implementation: openstack > neutron_plugin.port.creation_validation
           inputs:
@@ -693,7 +694,7 @@ node_types:
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create:
           implementation: openstack > neutron_plugin.network.create
           inputs:
@@ -712,7 +713,8 @@ node_types:
               default: {}
               type: map
               entry_schema: string
-      aria.openstack.interfaces.validation:
+      Validation:
+        type: aria.openstack.interfaces.validation
         creation:
           implementation: openstack > neutron_plugin.network.creation_validation
           inputs:
@@ -757,7 +759,7 @@ node_types:
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create:
           implementation: openstack > neutron_plugin.floatingip.create
           inputs:
@@ -776,7 +778,8 @@ node_types:
               default: {}
               type: map
               entry_schema: string
-      aria.openstack.interfaces.validation:
+      Validation: 
+        type: aria.openstack.interfaces.validation
         creation:
           implementation: openstack > neutron_plugin.floatingip.creation_validation
           inputs:
@@ -841,7 +844,7 @@ node_types:
           If a Server instance is connected to this Volume by a relationship,
           this volume will be used as the boot volume for that Server.
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create:
           implementation: openstack > cinder_plugin.volume.create
           inputs:
@@ -871,7 +874,8 @@ node_types:
               default: {}
               type: map
               entry_schema: string
-      aria.openstack.interfaces.validation:
+      Validation:
+        type: aria.openstack.interfaces.validation
         creation:
           implementation: openstack > cinder_plugin.volume.creation_validation
           inputs:
@@ -919,7 +923,7 @@ node_types:
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create:
           implementation: openstack > nova_plugin.floatingip.create
           inputs:
@@ -938,7 +942,8 @@ node_types:
               default: {}
               type: map
               entry_schema: string
-      aria.openstack.interfaces.validation:
+      Validation:
+        type: aria.openstack.interfaces.validation
         creation:
           implementation: openstack > nova_plugin.floatingip.creation_validation
           inputs:
@@ -993,7 +998,7 @@ node_types:
         description: security group description
         type: string
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create:
           implementation: openstack > nova_plugin.security_group.create
           inputs:
@@ -1013,7 +1018,8 @@ node_types:
               type: map
               entry_schema: string
 
-      aria.openstack.interfaces.validation:
+      Validation:
+        type: aria.openstack.interfaces.validation
         creation:
           implementation: openstack > nova_plugin.security_group.creation_validation
           inputs:
@@ -1069,7 +1075,7 @@ node_types:
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create:
           implementation: openstack > glance_plugin.image.create
           inputs:
@@ -1094,7 +1100,8 @@ node_types:
               default: {}
               type: map
               entry_schema: string
-      aria.openstack.interfaces.validation:
+      Validation:
+        type: aria.openstack.interfaces.validation
         creation:
           implementation: openstack > glance_plugin.image.creation_validation
           inputs:
@@ -1102,6 +1109,7 @@ node_types:
               default: {}
               type: map
               entry_schema: string
+
   aria.openstack.nodes.Project:
     derived_from: tosca.nodes.Root
     properties:
@@ -1156,11 +1164,12 @@ node_types:
           Expected to contain the following nested fields:
           username, password, tenant_name, auth_url, region.
     interfaces:
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         create: openstack.keystone_plugin.project.create
         start: openstack.keystone_plugin.project.start
         delete: openstack.keystone_plugin.project.delete
-      aria.openstack.interfaces.validation:
+      Validation: 
+        type: aria.openstack.interfaces.validation
         creation: openstack.keystone_plugin.project.creation_validation
 
 
@@ -1169,8 +1178,7 @@ relationship_types:
   aria.openstack.port_connected_to_security_group:
     derived_from: ConnectsTo
     interfaces:
-      tosca.interfaces.relationship.Configure:
-        type: tosca.interfaces.relationship.Configure
+      Configure:
         add_source:
           implementation: openstack > neutron_plugin.port.connect_security_group
           inputs:
@@ -1182,7 +1190,7 @@ relationship_types:
   aria.openstack.subnet_connected_to_router:
     derived_from: ConnectsTo
     interfaces:
-      tosca.interfaces.relationship.Configure:
+      Configure:
         add_target:
           implementation: openstack > neutron_plugin.router.connect_subnet
           inputs:
@@ -1201,7 +1209,7 @@ relationship_types:
   aria.openstack.server_connected_to_floating_ip:
     derived_from: ConnectsTo
     interfaces:
-      tosca.interfaces.relationship.Configure:
+      Configure:
         add_source:
           implementation: openstack > nova_plugin.server.connect_floatingip
           inputs:
@@ -1227,7 +1235,7 @@ relationship_types:
   aria.openstack.port_connected_to_floating_ip:
     derived_from: ConnectsTo
     interfaces:
-      tosca.interfaces.relationship.Configure:
+      Configure:
         source_add:
           implementation: openstack > neutron_plugin.floatingip.connect_port
           inputs:
@@ -1246,7 +1254,7 @@ relationship_types:
   aria.openstack.server_connected_to_security_group:
     derived_from: ConnectsTo
     interfaces:
-      tosca.interfaces.relationship.Configure:
+      Configure:
         add_source:
           implementation: openstack > nova_plugin.server.connect_security_group
           inputs:
@@ -1267,7 +1275,7 @@ relationship_types:
   aria.openstack.server_connected_to_port:
     derived_from: ConnectsTo
     interfaces:
-      tosca.interfaces.relationship.Configure:
+      Configure:
         remove_source:
           implementation: openstack > neutron_plugin.port.detach
           inputs:
@@ -1286,7 +1294,7 @@ relationship_types:
   aria.openstack.volume_attached_to_server:
     derived_from: ConnectsTo
     interfaces:
-      tosca.interfaces.relationship.Configure:
+      Configure:
         add_target:
           implementation: openstack > nova_plugin.server.attach_volume
           inputs:
@@ -1329,11 +1337,67 @@ relationship_types:
 
 policy_types:
   openstack:
-    derived_from: aria.Plugin
+    _extensions:
+      role: plugin
+    description: >-
+      ARIA Plugin definition.
+    derived_from: tosca.policies.Root
     properties:
       executor:
-        default: central_deployment_agent
+        description: >-
+          Where to execute the plugin's operations.
         type: string
+        default: central_deployment_agent
+        constraints:
+          - valid_values: [ central_deployment_agent, host_agent ]
+      source:
+        description: >-
+          Where to execute the plugin's operations. Where to retrieve the plugin from. Could be
+          either a path relative to the plugins dir inside the blueprint's root dir or a url. If
+          install is false, source is redundant. If install is true, source (or package_name) is
+          mandatory.
+        type: string
+        required: false
+      install_arguments:
+        description: >-
+          Optional arguments passed to the 'pip install' command created for the plugin
+          installation.
+        type: string
+        required: false
       install:
-        default: false
+        description: >-
+          Whether to install the plugin or not as it might already be installed as part of the
+          agent.
         type: boolean
+        default: false
+      package_name:
+        description: >-
+          Managed plugin package name. If install is false, package_name is redundant. If install is
+          true, package_name (or source) is mandatory.
+        type: string
+        required: false
+      package_version:
+        description: >-
+          Managed plugin package version.
+        type: string
+        required: false
+      supported_platform:
+        description: >-
+          Managed plugin supported platform (e.g. linux_x86_64).
+        type: string
+        required: false
+      supported_distribution:
+        description: >-
+          Managed plugin distribution.
+        type: string
+        required: false
+      distribution_version:
+        description: >-
+          Managed plugin distribution version.
+        type: string
+        required: false
+      distribution_release:
+        description: >-
+          Managed plugin distribution release.
+        type: string
+        required: false
