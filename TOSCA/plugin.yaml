@@ -296,7 +296,7 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Standard:
         create:
-          implementation: openstack.nova_plugin.keypair.create
+          implementation: openstack > nova_plugin.keypair.create
           inputs:
             args:
               default: {}
@@ -308,7 +308,7 @@ node_types:
               type: map
               entry_schema: string
         delete:
-          implementation: openstack.nova_plugin.keypair.delete
+          implementation: openstack > nova_plugin.keypair.delete
           inputs:
             openstack_config:
               default: {}
@@ -317,7 +317,7 @@ node_types:
 
       aria.openstack.interfaces.validation:
         creation:
-          implementation: openstack.nova_plugin.keypair.creation_validation
+          implementation: openstack > nova_plugin.keypair.creation_validation
           inputs:
             openstack_config:
               default: {}
@@ -365,7 +365,7 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Standard:
         create:
-          implementation: openstack.neutron_plugin.subnet.create
+          implementation: openstack > neutron_plugin.subnet.create
           inputs:
             args:
               default: {}
@@ -376,7 +376,7 @@ node_types:
               type: map
               entry_schema: string
         delete:
-          implementation: openstack.neutron_plugin.subnet.delete
+          implementation: openstack > neutron_plugin.subnet.delete
           inputs:
             openstack_config:
               default: {}
@@ -384,7 +384,7 @@ node_types:
               entry_schema: string
       aria.openstack.interfaces.validation:
         creation:
-          implementation: openstack.neutron_plugin.subnet.creation_validation
+          implementation: openstack > neutron_plugin.subnet.creation_validation
           inputs:
             args:
               default: {}
@@ -456,7 +456,7 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Standard:
         create:
-          implementation: openstack.neutron_plugin.security_group.create
+          implementation: openstack > neutron_plugin.security_group.create
           inputs:
             args:
               default: {}
@@ -467,7 +467,7 @@ node_types:
               type: map
               entry_schema: string
         delete:
-          implementation: openstack.neutron_plugin.security_group.delete
+          implementation: openstack > neutron_plugin.security_group.delete
           inputs:
             openstack_config:
               default: {}
@@ -475,7 +475,7 @@ node_types:
               entry_schema: string
       aria.openstack.interfaces.validation:
         creation:
-          implementation: openstack.neutron_plugin.security_group.creation_validation
+          implementation: openstack > neutron_plugin.security_group.creation_validation
           inputs:
             openstack_config:
               default: {}
@@ -533,7 +533,7 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Standard:
         create:
-          implementation: openstack.neutron_plugin.router.create
+          implementation: openstack > neutron_plugin.router.create
           inputs:
             args:
               default: {}
@@ -544,7 +544,7 @@ node_types:
               type: map
               entry_schema: string
         delete:
-          implementation: openstack.neutron_plugin.router.delete
+          implementation: openstack > neutron_plugin.router.delete
           inputs:
             openstack_config:
               default: {}
@@ -552,7 +552,7 @@ node_types:
               entry_schema: string
       aria.openstack.interfaces.validation:
         creation:
-          implementation: openstack.neutron_plugin.router.creation_validation
+          implementation: openstack > neutron_plugin.router.creation_validation
           inputs:
             openstack_config:
               default: {}
@@ -607,7 +607,7 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Standard:
         create:
-          implementation: openstack.neutron_plugin.port.create
+          implementation: openstack > neutron_plugin.port.create
           inputs:
             args:
               default: {}
@@ -619,7 +619,7 @@ node_types:
               type: map
               entry_schema: string
         delete:
-          implementation: openstack.neutron_plugin.port.delete
+          implementation: openstack > neutron_plugin.port.delete
           inputs:
             openstack_config:
               default: {}
@@ -627,7 +627,7 @@ node_types:
               entry_schema: string
       tosca.interfaces.relationship.Configure:
         add_target:
-          implementation: openstack.neutron_plugin.port.connect_security_group
+          implementation: openstack > neutron_plugin.port.connect_security_group
           inputs:
             openstack_config:
               default: {}
@@ -635,7 +635,7 @@ node_types:
               entry_schema: string
       aria.openstack.interfaces.validation:
         creation:
-          implementation: openstack.neutron_plugin.port.creation_validation
+          implementation: openstack > neutron_plugin.port.creation_validation
           inputs:
             openstack_config:
               default: {}
@@ -695,7 +695,7 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Standard:
         create:
-          implementation: openstack.neutron_plugin.network.create
+          implementation: openstack > neutron_plugin.network.create
           inputs:
             args:
               default: {}
@@ -706,7 +706,7 @@ node_types:
               type: map
               entry_schema: string
         delete:
-          implementation: openstack.neutron_plugin.network.delete
+          implementation: openstack > neutron_plugin.network.delete
           inputs:
             openstack_config:
               default: {}
@@ -714,7 +714,7 @@ node_types:
               entry_schema: string
       aria.openstack.interfaces.validation:
         creation:
-          implementation: openstack.neutron_plugin.network.creation_validation
+          implementation: openstack > neutron_plugin.network.creation_validation
           inputs:
             openstack_config:
               default: {}
@@ -759,7 +759,7 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Standard:
         create:
-          implementation: openstack.neutron_plugin.floatingip.create
+          implementation: openstack > neutron_plugin.floatingip.create
           inputs:
             args:
               default: {}
@@ -770,7 +770,7 @@ node_types:
               type: map
               entry_schema: string
         delete:
-          implementation: openstack.neutron_plugin.floatingip.delete
+          implementation: openstack > neutron_plugin.floatingip.delete
           inputs:
             openstack_config:
               default: {}
@@ -778,7 +778,7 @@ node_types:
               entry_schema: string
       aria.openstack.interfaces.validation:
         creation:
-          implementation: openstack.neutron_plugin.floatingip.creation_validation
+          implementation: openstack > neutron_plugin.floatingip.creation_validation
           inputs:
             openstack_config:
               default: {}
@@ -843,7 +843,7 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Standard:
         create:
-          implementation: openstack.cinder_plugin.volume.create
+          implementation: openstack > cinder_plugin.volume.create
           inputs:
             args:
               default: {}
@@ -865,7 +865,7 @@ node_types:
               type: integer
               default: 15
         delete:
-          implementation: openstack.cinder_plugin.volume.delete
+          implementation: openstack > cinder_plugin.volume.delete
           inputs:
             openstack_config:
               default: {}
@@ -873,7 +873,7 @@ node_types:
               entry_schema: string
       aria.openstack.interfaces.validation:
         creation:
-          implementation: openstack.cinder_plugin.volume.creation_validation
+          implementation: openstack > cinder_plugin.volume.creation_validation
           inputs:
             openstack_config:
               default: {}
@@ -921,7 +921,7 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Standard:
         create:
-          implementation: openstack.nova_plugin.floatingip.create
+          implementation: openstack > nova_plugin.floatingip.create
           inputs:
             args:
               default: {}
@@ -932,7 +932,7 @@ node_types:
               type: map
               entry_schema: string
         delete:
-          implementation: openstack.nova_plugin.floatingip.delete
+          implementation: openstack > nova_plugin.floatingip.delete
           inputs:
             openstack_config:
               default: {}
@@ -940,7 +940,7 @@ node_types:
               entry_schema: string
       aria.openstack.interfaces.validation:
         creation:
-          implementation: openstack.nova_plugin.floatingip.creation_validation
+          implementation: openstack > nova_plugin.floatingip.creation_validation
           inputs:
             openstack_config:
               default: {}
@@ -995,7 +995,7 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Standard:
         create:
-          implementation: openstack.nova_plugin.security_group.create
+          implementation: openstack > nova_plugin.security_group.create
           inputs:
             args:
               default: {}
@@ -1006,7 +1006,7 @@ node_types:
               type: map
               entry_schema: string
         delete:
-          implementation: openstack.nova_plugin.security_group.delete
+          implementation: openstack > nova_plugin.security_group.delete
           inputs:
             openstack_config:
               default: {}
@@ -1015,7 +1015,7 @@ node_types:
 
       aria.openstack.interfaces.validation:
         creation:
-          implementation: openstack.nova_plugin.security_group.creation_validation
+          implementation: openstack > nova_plugin.security_group.creation_validation
           inputs:
             openstack_config:
               default: {}
@@ -1071,14 +1071,14 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Standard:
         create:
-          implementation: openstack.glance_plugin.image.create
+          implementation: openstack > glance_plugin.image.create
           inputs:
             openstack_config:
               default: {}
               type: map
               entry_schema: string
         start:
-          implementation: openstack.glance_plugin.image.start
+          implementation: openstack > glance_plugin.image.start
           inputs:
             start_retry_interval:
               default: 30
@@ -1088,7 +1088,7 @@ node_types:
               type: map
               entry_schema: string
         delete:
-          implementation: openstack.glance_plugin.image.delete
+          implementation: openstack > glance_plugin.image.delete
           inputs:
             openstack_config:
               default: {}
@@ -1096,7 +1096,7 @@ node_types:
               entry_schema: string
       aria.openstack.interfaces.validation:
         creation:
-          implementation: openstack.glance_plugin.image.creation_validation
+          implementation: openstack > glance_plugin.image.creation_validation
           inputs:
             openstack_config:
               default: {}
@@ -1172,7 +1172,7 @@ relationship_types:
       tosca.interfaces.relationship.Configure:
         type: tosca.interfaces.relationship.Configure
         add_source:
-          implementation: openstack.neutron_plugin.port.connect_security_group
+          implementation: openstack > neutron_plugin.port.connect_security_group
           inputs:
             openstack_config:
               default: {}
@@ -1184,14 +1184,14 @@ relationship_types:
     interfaces:
       tosca.interfaces.relationship.Configure:
         add_target:
-          implementation: openstack.neutron_plugin.router.connect_subnet
+          implementation: openstack > neutron_plugin.router.connect_subnet
           inputs:
             openstack_config:
               default: {}
               type: map
               entry_schema: string
         remove_target:
-          implementation: openstack.neutron_plugin.router.disconnect_subnet
+          implementation: openstack > neutron_plugin.router.disconnect_subnet
           inputs:
             openstack_config:
               default: {}
@@ -1203,7 +1203,7 @@ relationship_types:
     interfaces:
       tosca.interfaces.relationship.Configure:
         add_source:
-          implementation: openstack.nova_plugin.server.connect_floatingip
+          implementation: openstack > nova_plugin.server.connect_floatingip
           inputs:
             fixed_ip:
               description: >
@@ -1217,7 +1217,7 @@ relationship_types:
               entry_schema: string
 
         remove_source:
-          implementation: openstack.nova_plugin.server.disconnect_floatingip
+          implementation: openstack > nova_plugin.server.disconnect_floatingip
           inputs:
             openstack_config:
               default: {}
@@ -1229,14 +1229,14 @@ relationship_types:
     interfaces:
       tosca.interfaces.relationship.Configure:
         source_add:
-          implementation: openstack.neutron_plugin.floatingip.connect_port
+          implementation: openstack > neutron_plugin.floatingip.connect_port
           inputs:
             openstack_config:
               default: {}
               type: map
               entry_schema: string
         remove_source:
-          implementation: openstack.neutron_plugin.floatingip.disconnect_port
+          implementation: openstack > neutron_plugin.floatingip.disconnect_port
           inputs:
             openstack_config:
               default: {}
@@ -1248,7 +1248,7 @@ relationship_types:
     interfaces:
       tosca.interfaces.relationship.Configure:
         add_source:
-          implementation: openstack.nova_plugin.server.connect_security_group
+          implementation: openstack > nova_plugin.server.connect_security_group
           inputs:
             openstack_config:
               default: {}
@@ -1256,7 +1256,7 @@ relationship_types:
               entry_schema: string
 
         remove_source:
-          implementation: openstack.nova_plugin.server.disconnect_security_group
+          implementation: openstack > nova_plugin.server.disconnect_security_group
           inputs:
             openstack_config:
               default: {}
@@ -1269,7 +1269,7 @@ relationship_types:
     interfaces:
       tosca.interfaces.relationship.Configure:
         remove_source:
-          implementation: openstack.neutron_plugin.port.detach
+          implementation: openstack > neutron_plugin.port.detach
           inputs:
             openstack_config:
               default: {}
@@ -1288,7 +1288,7 @@ relationship_types:
     interfaces:
       tosca.interfaces.relationship.Configure:
         add_target:
-          implementation: openstack.nova_plugin.server.attach_volume
+          implementation: openstack > nova_plugin.server.attach_volume
           inputs:
             openstack_config:
               default: {}
@@ -1307,7 +1307,7 @@ relationship_types:
               type: integer
               default: 2
         remove_target:
-          implementation: openstack.nova_plugin.server.detach_volume
+          implementation: openstack > nova_plugin.server.detach_volume
           inputs:
             openstack_config:
               default: {}
